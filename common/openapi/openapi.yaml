@@ -1,0 +1,104 @@
+openapi: 3.0.3
+info:
+  title: NEXUS-MCP API
+  version: 1.0.0
+  description: API contract for NEXUS-MCP gateway MVP.
+servers:
+  - url: http://localhost:8080
+paths:
+  /health:
+    get:
+      summary: Liveness endpoint
+      responses:
+        '200':
+          description: Service is alive
+  /api/v1/health:
+    get:
+      summary: Readiness endpoint
+      responses:
+        '200':
+          description: Dependencies are healthy
+        '503':
+          description: One or more dependencies are degraded
+  /api/v1/auth/register:
+    post:
+      summary: Register a user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 12
+                role:
+                  type: string
+                  enum: [admin, user]
+      responses:
+        '201':
+          description: User created
+        '400':
+          description: Validation failure
+  /api/v1/auth/login:
+    post:
+      summary: Authenticate and issue JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login success
+        '401':
+          description: Invalid credentials
+  /api/v1/tool-calls:
+    post:
+      summary: Execute or queue an MCP tool call
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agentId, tool, action, payload, destructive]
+              properties:
+                agentId:
+                  type: string
+                  format: uuid
+                tool:
+                  type: string
+                action:
+                  type: string
+                payload:
+                  type: object
+                destructive:
+                  type: boolean
+      responses:
+        '200':
+          description: Executed or queued
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
